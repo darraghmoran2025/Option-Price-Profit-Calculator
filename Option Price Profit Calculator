@@ -1,0 +1,146 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+def calculate_option_payoff(stock_price, strike_price, premium, option_type, position):
+    """
+    Calculate the payoff for an option at expiration
+    
+    Parameters:
+    stock_price (float): Price of the stock at expiration
+    strike_price (float): Strike price of the option
+    premium (float): Premium paid or received for the option
+    option_type (str): 'call' or 'put'
+    position (str): 'long' or 'short'
+    
+    Returns:
+    float: Profit or loss at expiration
+    """
+    if option_type.lower() == 'call':
+        # Call option payoff: max(stock_price - strike_price, 0)
+        if position.lower() == 'long':
+            return max(stock_price - strike_price, 0) - premium
+        else:  # short
+            return premium - max(stock_price - strike_price, 0)
+    else:  # put
+        # Put option payoff: max(strike_price - stock_price, 0)
+        if position.lower() == 'long':
+            return max(strike_price - stock_price, 0) - premium
+        else:  # short
+            return premium - max(strike_price - stock_price, 0)
+
+def calculate_break_even(strike_price, premium, option_type, position):
+    """Calculate the break-even price for an option"""
+    if option_type.lower() == 'call':
+        return strike_price + premium
+    else:  # put
+        return strike_price - premium
+
+def plot_option_payoff(current_price, strike_price, premium, option_type, position):
+    """
+    Plot the option payoff diagram
+    
+    Parameters:
+    current_price (float): Current stock price
+    strike_price (float): Strike price of the option
+    premium (float): Premium paid or received for the option
+    option_type (str): 'call' or 'put'
+    position (str): 'long' or 'short'
+    """
+    # Calculate range for stock prices (±30% of current price)
+    price_range = current_price * 0.3
+    min_price = max(0.1, current_price - price_range)
+    max_price = current_price + price_range
+    
+    # Create array of stock prices
+    stock_prices = np.linspace(min_price, max_price, 100)
+    
+    # Calculate payoffs for each stock price
+    payoffs = [calculate_option_payoff(price, strike_price, premium, option_type, position) 
+              for price in stock_prices]
+    
+    # Calculate break-even price
+    break_even = calculate_break_even(strike_price, premium, option_type, position)
+    
+    # Create plot
+    plt.figure(figsize=(10, 6))
+    plt.plot(stock_prices, payoffs, 'b-', linewidth=2)
+    plt.axhline(y=0, color='black', linestyle='-', alpha=0.3)
+    plt.axvline(x=current_price, color='green', linestyle='--', label=f'Current Price: ${current_price:.2f}')
+    plt.axvline(x=break_even, color='red', linestyle='--', label=f'Break-even: ${break_even:.2f}')
+    plt.axvline(x=strike_price, color='purple', linestyle=':', label=f'Strike Price: ${strike_price:.2f}')
+    
+    plt.grid(True, alpha=0.3)
+    plt.xlabel('Stock Price at Expiration')
+    plt.ylabel('Profit/Loss ($)')
+    
+    option_label = f"{position.capitalize()} {option_type.capitalize()}"
+    plt.title(f'{option_label} Option Payoff Diagram')
+    
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+def main():
+    print("=== SIMPLE OPTION PROFIT CALCULATOR ===")
+    
+    # Get user input
+    option_type = input("Enter option type (call/put): ").lower()
+    while option_type not in ['call', 'put']:
+        option_type = input("Please enter 'call' or 'put': ").lower()
+    
+    position = input("Enter position (long/short): ").lower()
+    while position not in ['long', 'short']:
+        position = input("Please enter 'long' or 'short': ").lower()
+    
+    current_price = float(input("Enter current stock price: $"))
+    strike_price = float(input("Enter strike price: $"))
+    premium = float(input("Enter option premium: $"))
+    
+    # Display basic information
+    print("\n=== OPTION DETAILS ===")
+    print(f"Option Type: {option_type.capitalize()}")
+    print(f"Position: {position.capitalize()}")
+    print(f"Current Stock Price: ${current_price:.2f}")
+    print(f"Strike Price: ${strike_price:.2f}")
+    
+    if position == 'long':
+        print(f"Premium Paid: ${premium:.2f}")
+    else:
+        print(f"Premium Received: ${premium:.2f}")
+    
+    # Calculate break-even
+    break_even = calculate_break_even(strike_price, premium, option_type, position)
+    print(f"Break-even Price: ${break_even:.2f}")
+    
+    # Calculate maximum profit/loss
+    if option_type == 'call' and position == 'long':
+        max_loss = -premium
+        max_profit = "Unlimited"
+        print(f"Maximum Loss: ${max_loss:.2f}")
+        print(f"Maximum Profit: {max_profit}")
+    elif option_type == 'put' and position == 'long':
+        max_loss = -premium
+        max_profit = strike_price - premium if strike_price > premium else 0
+        print(f"Maximum Loss: ${max_loss:.2f}")
+        print(f"Maximum Profit: ${max_profit:.2f}")
+    elif option_type == 'call' and position == 'short':
+        max_profit = premium
+        max_loss = "Unlimited"
+        print(f"Maximum Profit: ${max_profit:.2f}")
+        print(f"Maximum Loss: {max_loss}")
+    else:  # Put and short
+        max_profit = premium
+        max_loss = strike_price - premium if strike_price > premium else 0
+        print(f"Maximum Profit: ${max_profit:.2f}")
+        print(f"Maximum Loss: ${max_loss:.2f}")
+    
+    # Calculate current profit/loss if exercised immediately
+    current_payoff = calculate_option_payoff(current_price, strike_price, premium, option_type, position)
+    print(f"Profit/Loss if exercised at current price: ${current_payoff:.2f}")
+    
+    # Plot payoff diagram
+    print("\nGenerating payoff diagram...")
+    plot_option_payoff(current_price, strike_price, premium, option_type, position)
+
+if __name__ == "__main__":
+    main()
